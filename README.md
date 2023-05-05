@@ -9,9 +9,6 @@ Markdown Image Paste for Remote is a Visual Studio Code extension designed to si
 - Utilizes WebView clipboard API to copy images from the clipboard to the remote host
 - Users can click a button within the WebView to access the clipboard content
 - Automatically generate Markdown syntax for the copied image
-- Supports a variety of image formats, including PNG, JPEG, and GIF
-- Automatically detects and applies the appropriate format for the copied image
-- Integrates seamlessly with Visual Studio Code's remote development environment, including GitHub Codespaces and DevContainers
 
 ## Motivation
 
