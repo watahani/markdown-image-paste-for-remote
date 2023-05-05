@@ -35,7 +35,7 @@ Currently, there are no extension settings. Images are copied to the folder that
 
 ## Release Notes
 
-### 0.0.1
+### 0.0.3
 
 Initial release.
 

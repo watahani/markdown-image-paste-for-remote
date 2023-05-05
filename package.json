@@ -7,7 +7,7 @@
     "url": "https://github.com/watahani/markdown-image-paste-for-remote"
   },
   "publisher": "watahani",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "engines": {
     "vscode": "^1.77.0"
   },
@@ -29,7 +29,7 @@
   },
   "scripts": {
     "vscode:prepublish": "npm run esbuild-base -- --minify",
-    "esbuild-base": "esbuild ./src/extension.ts --bundle --outfile=out/main.js --external:vscode --format=cjs --platform=node",
+    "esbuild-base": "esbuild ./src/extension.ts --bundle --outfile=out/extension.js --external:vscode --format=cjs --platform=node",
     "esbuild": "npm run esbuild-base -- --sourcemap",
     "esbuild-watch": "npm run esbuild-base -- --sourcemap --watch",
     "compile": "tsc -p ./",
