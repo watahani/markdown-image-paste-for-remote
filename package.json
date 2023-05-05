@@ -4,7 +4,7 @@
   "description": "a Visual Studio Code extension designed to simplify the process of inserting images into Markdown files while working in a remote development environment, such as GitHub Codespaces or a DevContainer. It uses the WebView clipboard API to provide an easy and convenient way to copy images from your clipboard to your remote host and automatically generate the appropriate Markdown syntax for the copied image.",
   "repository": {
     "type": "git",
-    "url": "https://github.com/watahani/markdown-image-paste-for-remote.githttps://github.com/watahani/markdown-image-paste-for-remote.git"
+    "url": "https://github.com/watahani/markdown-image-paste-for-remote"
   },
   "version": "0.0.1",
   "engines": {
