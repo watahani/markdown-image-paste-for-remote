@@ -33,6 +33,10 @@ It works by following these steps:
 
 Currently, there are no extension settings. Images are copied to the folder that is same as the Markdown file that is currently open in the editor.
 
+## Contribution
+
+This extension is created for personal use. But any contribution is welcome. Feel free to open an issue or submit a pull request.
+
 ## Release Notes
 
 ### 0.0.4
