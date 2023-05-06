@@ -1,4 +1,5 @@
 # Markdown Image Paste for Remote
+[![CI](https://badgen.net/vs-marketplace/v/watahani.markdown-image-paste-for-remote)](https://marketplace.visualstudio.com/items?itemName=watahani.markdown-image-paste-for-remote)
 
 ![screen shot](images/screenshot.gif)
 
