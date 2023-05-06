@@ -121,3 +121,7 @@ document.getElementById('paste-image').addEventListener('click', () => {
     permissionMessage.innerHtml = text;
     clipboardUtils.readImage(postDataToExtensionHost);
 });
+
+document.getElementById('debug-btn').addEventListener('click', () => {
+    toggleDebug();
+});
