@@ -7,5 +7,5 @@ vsc-extension-quickstart.md
 **/tsconfig.json
 **/.eslintrc.json
 **/*.map
-**/*.tsnpm i --save-dev esbuild
+**/*.ts
 node_modules/**

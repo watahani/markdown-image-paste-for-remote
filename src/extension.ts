@@ -2,7 +2,6 @@
 // Import the module and reference it with the alias vscode in your code below
 import path = require('path');
 import * as vscode from 'vscode';
-import * as sharp from 'sharp';
 import * as crypto from 'crypto';
 import { StringDecoder } from 'string_decoder';
 
@@ -75,15 +74,13 @@ async function pasteImage(context: vscode.ExtensionContext, staticPath: vscode.U
 					}
 					const base64data = message.data.replace(/^data:image\/\w+;base64,/, '');
 					const fileExtension = message.data.substring(message.data.indexOf('/') + 1, message.data.indexOf(';'));
-					const buffer = Buffer.from(base64data, 'base64');
-					const image = sharp(buffer);
 
 					const mdName = mdPath.substring(mdPath.lastIndexOf('/') + 1, mdPath.length);
 					const currentFolder = mdPath.replace(new RegExp(mdName + '$'), '');
 					const mdNameWithoutExtension = mdName.substring(0, mdName.lastIndexOf('.'));
 					const outpath = path.join(currentFolder, mdNameWithoutExtension + '/');
 
-					await saveImageToFolder(image, outpath, fileNameAndAlt.filename + '.' + fileExtension);
+					await saveImageToFolder(base64data, outpath, fileNameAndAlt.filename + '.' + fileExtension);
 					const relativePath = `./${mdNameWithoutExtension}/${fileNameAndAlt.filename}.${fileExtension}`;
 					panel.dispose(); // Close the webview panel
 					await insertImageToMarkdown(editor, relativePath, fileNameAndAlt.altText);
@@ -110,7 +107,7 @@ function checkMessageIsImage(message: string) {
 	return regex.test(message);
 }
 
-async function saveImageToFolder(image: sharp.Sharp, folderPath: string, imageName: string) {
+async function saveImageToFolder(base64data: string, folderPath: string, imageName: string) {
 	//if folder not exist create it
 	try {
 		await vscode.workspace.fs.stat(vscode.Uri.file(folderPath));
@@ -120,7 +117,9 @@ async function saveImageToFolder(image: sharp.Sharp, folderPath: string, imageNa
 		await vscode.workspace.fs.createDirectory(vscode.Uri.file(folderPath));
 	}
 	const imagePath = path.join(folderPath, imageName);
-	await image.toFile(imagePath);
+
+	const buffer = Buffer.from(base64data, 'base64');
+	await vscode.workspace.fs.writeFile(vscode.Uri.file(imagePath), buffer);
 
 	return;
 }
