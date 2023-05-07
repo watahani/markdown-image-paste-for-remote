@@ -1,0 +1,43 @@
+name: Check Package Version
+
+on:
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  check-version:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v2
+        with:
+          node-version: 14
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Check if package.json version is updated
+        run: |
+          git fetch origin main
+          VERSION_CHANGED=$(git diff --name-only origin/main..HEAD -- package.json | wc -l)
+          if [ $VERSION_CHANGED -eq 1 ]; then
+            VERSION_MAIN=$(git show origin/main:package.json | jq .version)
+            VERSION_HEAD=$(cat package.json | jq .version)
+            if [ $VERSION_MAIN != $VERSION_HEAD ]; then
+              echo "Version updated: $VERSION_MAIN -> $VERSION_HEAD"
+            else
+              echo "Error: package.json version is not updated."
+              echo "Please update the version in package.json before merging."
+              exit 1
+            fi
+          else
+            echo "Error: package.json not found in the changed files."
+            echo "Please update the version in package.json before merging."
+            exit 1
+          fi
