@@ -185,7 +185,13 @@ async function askFileName(selectedString?: string): Promise<{ filename: string,
 	const inputFileName = await vscode.window.showInputBox({
 		prompt: 'enter file name',
 		placeHolder: 'image',
-		value: selectedString
+		value: selectedString,
+		validateInput: (input: string) => {
+            const forbiddenCharacters = /[/\\:*?"<>|]/g;
+            return forbiddenCharacters.test(input)
+                ? 'File names cannot contain /, \\, :, *, ?, ", <, >, |.'
+                : null;
+        },
 	});
 
 	if (null === inputFileName || undefined === inputFileName) {
