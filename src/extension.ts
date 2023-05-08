@@ -127,12 +127,18 @@ async function saveImageToFolder(base64data: string, folderPath: string, imageNa
 async function insertImageToMarkdown(editor: vscode.TextEditor, imagePath: string, altText: string) {
 	if (editor) {
 		const imageMarkdown = `![${altText}](${imagePath})`;
-		//reforcus editor
-		// Refocus the editor
+		// Refocuse the editor
 		const focusedEditor = await vscode.window.showTextDocument(editor.document, { preview: false, viewColumn: editor.viewColumn });
-		focusedEditor.edit((editBuilder) => {
-			editBuilder.insert(focusedEditor.selection.active, imageMarkdown);
-		});
+		//if selection
+		if (focusedEditor.selection.isEmpty) {
+			focusedEditor.edit((editBuilder) => {
+				editBuilder.insert(focusedEditor.selection.active, imageMarkdown);
+			});
+		} else {
+			focusedEditor.edit((editBuilder) => {
+				editBuilder.replace(focusedEditor.selection, imageMarkdown);
+			});
+		}
 	} else {
 		vscode.window.showErrorMessage('No active editor found');
 	}
@@ -179,7 +185,13 @@ async function askFileName(selectedString?: string): Promise<{ filename: string,
 	const inputFileName = await vscode.window.showInputBox({
 		prompt: 'enter file name',
 		placeHolder: 'image',
-		value: selectedString
+		value: selectedString,
+		validateInput: (input: string) => {
+            const forbiddenCharacters = /[/\\:*?"<>|]/g;
+            return forbiddenCharacters.test(input)
+                ? 'File names cannot contain /, \\, :, *, ?, ", <, >, |.'
+                : null;
+        },
 	});
 
 	if (null === inputFileName || undefined === inputFileName) {

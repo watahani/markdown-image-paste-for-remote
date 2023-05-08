@@ -7,7 +7,7 @@
     "url": "https://github.com/watahani/markdown-image-paste-for-remote"
   },
   "publisher": "watahani",
-  "version": "0.0.4",
+  "version": "0.1.0",
   "engines": {
     "vscode": "^1.77.0"
   },
