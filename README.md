@@ -38,10 +38,10 @@ It works by following these steps:
 
     You can use variable:
 
-    `${currentFileDir}`: the path of directory that contain current editing file.
-    `${projectRoot}`: the path of the project opened in vscode.
-    `${currentFileName}`: the current file name with ext.
-    `${currentFileNameWithoutExt}`: the current file name without ext.
+    - `${currentFileDir}`: the path of directory that contain current editing file.
+    - `${projectRoot}`: the path of the project opened in vscode.
+    - `${currentFileName}`: the current file name with ext.
+    - `${currentFileNameWithoutExt}`: the current file name without ext.
 
     Default value is ${currentFileDir}${currentFileNameWithoutExt}.
 
