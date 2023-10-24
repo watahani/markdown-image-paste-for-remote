@@ -62,7 +62,7 @@ async function pasteImage(context: vscode.ExtensionContext, staticPath: vscode.U
 		const fileNameAndAlt = await askFileName(selectedText);
 		if (fileNameAndAlt === null) { return; }
 		//get relative path
-		const mdPath = editor.document.uri.fsPath;
+		const mdPath = editor.document.uri.fsPath;	
 
 		const panel = await createImagePastePanel(staticPath, htmlTemplate);
 		await panel.webview.onDidReceiveMessage(
@@ -76,12 +76,23 @@ async function pasteImage(context: vscode.ExtensionContext, staticPath: vscode.U
 					const fileExtension = message.data.substring(message.data.indexOf('/') + 1, message.data.indexOf(';'));
 
 					const mdName = mdPath.substring(mdPath.lastIndexOf('/') + 1, mdPath.length);
-					const currentFolder = mdPath.replace(new RegExp(mdName + '$'), '');
+					const currentFileDir = path.dirname(mdPath) + '/';
 					const mdNameWithoutExtension = mdName.substring(0, mdName.lastIndexOf('.'));
-					const outpath = path.join(currentFolder, mdNameWithoutExtension + '/');
+					const projectRoot = vscode.workspace.workspaceFolders![0].uri.fsPath + '/';
+
+					let pathConfig = vscode.workspace.getConfiguration('markdownImagePasteForRemote')['imagePath'];
+					if (!pathConfig) {
+						pathConfig = "${currentFileDir}${currentFileNameWithoutExt}";
+					}
+					pathConfig = pathConfig.replace(/\${currentFileDir}/g, currentFileDir);
+					pathConfig = pathConfig.replace(/\${currentFileName}/g, mdName);
+					pathConfig = pathConfig.replace(/\${currentFileNameWithoutExt}/g, mdNameWithoutExtension);
+					pathConfig = pathConfig.replace(/\${projectRoot}/g, projectRoot);
+			
+					const outpath = pathConfig;
 
 					await saveImageToFolder(base64data, outpath, fileNameAndAlt.filename + '.' + fileExtension);
-					const relativePath = `./${mdNameWithoutExtension}/${fileNameAndAlt.filename}.${fileExtension}`;
+					const relativePath = path.relative(currentFileDir, outpath + '/' + fileNameAndAlt.filename + '.' + fileExtension);
 					panel.dispose(); // Close the webview panel
 					await insertImageToMarkdown(editor, relativePath, fileNameAndAlt.altText);
 
