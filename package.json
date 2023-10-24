@@ -7,7 +7,7 @@
     "url": "https://github.com/watahani/markdown-image-paste-for-remote"
   },
   "publisher": "watahani",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "engines": {
     "vscode": "^1.77.0"
   },
@@ -25,6 +25,19 @@
     ],
     "permissions": [
       "webview"
+    ],
+    "configuration":[
+      {
+        "type": "object",
+        "title": "Markdown Image Paste for Remote",
+        "properties": {
+          "markdownImagePasteForRemote.imagePath": {
+            "type": "string",
+            "default": "${currentFileDir}${currentFileNameWithoutExt}",
+            "description": "The destination to save image file.You can use variable ${currentFileDir}, ${fileNameWithoutExt} and ${projectRoot}. ${currentFileDir} will be replace by the path of directory that contain current editing file. ${projectRoot} will be replace by path of the project opened in vscode. ${currentFileNameWithoutExt} will be replace by the name of current editing file without extension."   
+          }
+        }
+      }
     ]
   },
   "scripts": {

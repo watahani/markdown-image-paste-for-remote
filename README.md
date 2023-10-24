@@ -33,7 +33,17 @@ It works by following these steps:
 
 ## Extension Settings
 
-Currently, there are no extension settings. Images are copied to the folder that is same as the Markdown file that is currently open in the editor.
+- markdownImagePasteForRemote.imagePath
+    The destination to save image file.
+
+    You can use variable:
+
+    ${currentFileDir}: the path of directory that contain current editing file.
+    ${projectRoot}: the path of the project opened in vscode.
+    ${currentFileName}: the current file name with ext.
+    ${currentFileNameWithoutExt}: the current file name without ext.
+
+    Default value is ${currentFileDir}${currentFileNameWithoutExt}.
 
 ## Contribution
 
