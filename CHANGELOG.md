@@ -16,6 +16,10 @@ Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how 
 - Relative `imagePath` values are resolved from the directory of the current Markdown file.
 - Refactored the extension into smaller modules and added unit tests.
 
+### Removed
+
+- The `win32-ia32` package is no longer built, because VS Code and vsce no longer support 32-bit Windows.
+
 ### Fixed
 
 - The first line of the selected text is now used as the default file name (and alt text).
