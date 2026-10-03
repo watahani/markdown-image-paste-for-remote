@@ -6,6 +6,8 @@ Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how 
 
 ## [Unreleased]
 
+## [0.3.0] - 2026-10-03
+
 ### Changed
 
 - Redesigned the paste panel to follow the VS Code color theme, with inline status and error messages and a collapsible debug log.
