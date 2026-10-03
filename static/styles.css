@@ -1,3 +1,11 @@
+:root {
+    --radius: 6px;
+}
+
+* {
+    box-sizing: border-box;
+}
+
 body {
     display: flex;
     flex-direction: column;
@@ -5,44 +13,131 @@ body {
     justify-content: center;
     min-height: 100vh;
     margin: 0;
-    font-family: sans-serif;
+    padding: 24px 16px 64px;
+    font-family: var(--vscode-font-family);
+    font-size: var(--vscode-font-size);
+    color: var(--vscode-foreground);
+    background-color: var(--vscode-editor-background);
 }
 
-#permission-message {
-    position: fixed;
-    top: 0;
+.card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
     width: 100%;
-    background-color: yellow;
+    max-width: 440px;
+    padding: 32px 28px;
     text-align: center;
-    padding: 10px 0;
-    color: orange;
+    border: 1px solid var(--vscode-widget-border, var(--vscode-panel-border, transparent));
+    border-radius: var(--radius);
+    background-color: var(--vscode-sideBar-background, var(--vscode-editor-background));
 }
 
-#paste-image {
-    padding: 20px 40px;
-    font-size: 24px;
+.icon {
+    color: var(--vscode-textLink-foreground);
+}
+
+h1 {
+    margin: 0;
+    font-size: 1.3em;
+    font-weight: 600;
+}
+
+.hint {
+    margin: 0;
+    line-height: 1.6;
+    color: var(--vscode-descriptionForeground);
+}
+
+kbd {
+    padding: 1px 6px;
+    font-family: var(--vscode-editor-font-family, monospace);
+    font-size: 0.9em;
+    border: 1px solid var(--vscode-keybindingLabel-border, var(--vscode-widget-border, currentColor));
+    border-bottom-color: var(--vscode-keybindingLabel-bottomBorder, var(--vscode-widget-border, currentColor));
+    border-radius: 3px;
+    color: var(--vscode-keybindingLabel-foreground, inherit);
+    background-color: var(--vscode-keybindingLabel-background, transparent);
+}
+
+button {
+    margin-top: 8px;
+    padding: 10px 28px;
+    font: inherit;
+    font-size: 1.1em;
+    font-weight: 600;
     cursor: pointer;
+    border: 1px solid var(--vscode-button-border, transparent);
+    border-radius: var(--radius);
+    color: var(--vscode-button-foreground);
+    background-color: var(--vscode-button-background);
 }
 
-#debug {
+button:hover:not(:disabled) {
+    background-color: var(--vscode-button-hoverBackground);
+}
+
+button:focus-visible {
+    outline: 1px solid var(--vscode-focusBorder);
+    outline-offset: 2px;
+}
+
+button:disabled {
+    cursor: progress;
+    opacity: 0.6;
+}
+
+.status {
+    min-height: 1.5em;
+    margin: 0;
+    line-height: 1.5;
+    color: var(--vscode-descriptionForeground);
+}
+
+.status:empty {
     display: none;
-    position: fixed;
-    bottom: 0;
-    width: 100%;
-    height: 25%;
-    background-color: rgba(0, 0, 0, 0.7);
-    color: white;
-    padding: 20px;
-    overflow-y: scroll;
 }
 
-#debug-btn {
+.status[data-kind="error"] {
+    width: 100%;
+    padding: 8px 12px;
+    text-align: left;
+    color: var(--vscode-errorForeground);
+    border: 1px solid var(--vscode-inputValidation-errorBorder, var(--vscode-errorForeground));
+    border-radius: var(--radius);
+    background-color: var(--vscode-inputValidation-errorBackground, transparent);
+}
+
+.log {
     position: fixed;
-    bottom: 10px;
-    right: 10px;
-    padding: 10px 20px;
-    font-size: 12px;
+    right: 12px;
+    bottom: 12px;
+    left: 12px;
+    font-size: 0.85em;
+    color: var(--vscode-descriptionForeground);
+}
+
+.log summary {
+    width: max-content;
+    margin-left: auto;
     cursor: pointer;
-    color:rgba(0, 0, 0, 0.7);
-    opacity: 20%; 
+    opacity: 0.6;
+}
+
+.log[open] summary,
+.log summary:hover {
+    opacity: 1;
+}
+
+.log pre {
+    max-height: 30vh;
+    margin: 6px 0 0;
+    padding: 8px 12px;
+    overflow: auto;
+    white-space: pre-wrap;
+    font-family: var(--vscode-editor-font-family, monospace);
+    border: 1px solid var(--vscode-widget-border, transparent);
+    border-radius: var(--radius);
+    background-color: var(--vscode-textCodeBlock-background, rgba(127, 127, 127, 0.1));
 }

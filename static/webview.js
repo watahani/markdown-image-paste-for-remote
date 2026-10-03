@@ -1,127 +1,108 @@
-const vscode = acquireVsCodeApi();
-function sendDebug(message) {
-    vscode.postMessage({
-        type: 'debug',
-        data: `${message}`,
-    });
-}
-function showError(message) {
-    vscode.postMessage({
-        type: 'error',
-        data: message,
-    });
-}
-function toggleDebug() {
-    const debugElement = document.getElementById('debug');
-    debugElement.style.display = debugElement.style.display === 'none' ? 'block' : 'none';
-}
+// @ts-check
+(function () {
+    // @ts-ignore acquireVsCodeApi is injected by VS Code
+    const vscode = acquireVsCodeApi();
 
-function debugOutput(message) {
-    sendDebug(message);
-    const debugElement = document.getElementById('debug');
-    const now = new Date();
-    const timestamp = now.toISOString();
-    debugElement.innerHTML += `${timestamp} - ${message}<br>`;
-}
+    const IMAGE_TYPES = ['image/png', 'image/jpeg', 'image/gif', 'image/bmp', 'image/tiff', 'image/webp'];
 
-debugOutput("Web View opened");
+    const pasteButton = /** @type {HTMLButtonElement} */ (document.getElementById('paste-button'));
+    const statusElement = /** @type {HTMLElement} */ (document.getElementById('status'));
+    const logElement = /** @type {HTMLElement} */ (document.getElementById('log'));
+    const shortcutElement = /** @type {HTMLElement} */ (document.getElementById('shortcut'));
 
-// https://dirask.com/posts/JavaScript-read-image-from-clipboard-as-Data-URLs-encoded-with-Base64-10Wwaj
-var clipboardUtils = new function () {
-    var permissions = {
-        'image/bmp': true,
-        'image/gif': true,
-        'image/png': true,
-        'image/jpeg': true,
-        'image/tiff': true
-    };
+    if (/Mac|iPhone|iPad/.test(navigator.platform)) {
+        shortcutElement.textContent = '⌘V';
+    }
 
-    function getType(types) {
-        for (var j = 0; j < types.length; ++j) {
-            var type = types[j];
-            if (permissions[type]) {
-                return type;
-            }
-        }
-        return null;
+    /** @param {string} message */
+    function log(message) {
+        logElement.textContent += `${new Date().toISOString()}  ${message}\n`;
+        vscode.postMessage({ type: 'log', data: message });
     }
-    function getItem(items) {
-        for (var i = 0; i < items.length; ++i) {
-            var item = items[i];
-            if (item) {
-                var type = getType(item.types);
-                if (type) {
-                    return item.getType(type);
-                }
-            }
-        }
-        return null;
+
+    /**
+     * @param {string} message
+     * @param {'info' | 'error'} [kind]
+     */
+    function setStatus(message, kind = 'info') {
+        statusElement.textContent = message;
+        statusElement.dataset.kind = kind;
     }
-    function loadFile(file, callback) {
-        if (window.FileReader) {
-            var reader = new FileReader();
-            reader.onload = function () {
-                callback(reader.result, null);
-            };
-            reader.onerror = function () {
-                callback(null, 'Incorrect file.');
-            };
-            reader.readAsDataURL(file);
-        } else {
-            callback(null, 'File api is not supported.');
-        }
+
+    /** @param {string} message */
+    function fail(message) {
+        setStatus(message, 'error');
+        pasteButton.disabled = false;
+        vscode.postMessage({ type: 'error', data: message });
     }
-    this.readImage = function (callback) {
-        if (navigator.clipboard) {
-            var promise = navigator.clipboard.read();
-            promise
-                .then(function (items) {
-                    var promise = getItem(items);
-                    if (promise == null) {
-                        debugOutput("clipboard is empty or does not contains image");
-                        callback(null, "clipboard is empty or does not contains image");
-                        return;
-                    }
-                    promise
-                        .then(function (result) {
-                            loadFile(result, callback);
-                        })
-                        .catch(function (error) {
-                            debugOutput("Reading clipboard error on WebView." + error.message);
-                            callback(null, "Reading clipboard error on WebView." + error.message);
-                        });
-                })
-                .catch(function (error) {
-                    debugOutput('Reading clipboard error on WebView.' + error.message);
-                    callback(null, 'Reading clipboard error on WebView.' + error.message);
-                });
-        } else {
-            showError('Clipboard is not supported on WebView')
-            callback(null, 'Clipboard is not supported.');
-        }
-    };
-};
-function postDataToExtensionHost(data, error) {
-    debugOutput("readImage");
-    if (error) {
-        showError(error);
-        return;
-    }
-    if (data) {
-        vscode.postMessage({
-            type: 'image',
-            data: data,
+
+    /**
+     * @param {Blob} blob
+     * @returns {Promise<string>}
+     */
+    function toDataUrl(blob) {
+        return new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = () => resolve(/** @type {string} */ (reader.result));
+            reader.onerror = () => reject(new Error('Failed to read the image.'));
+            reader.readAsDataURL(blob);
         });
     }
-}
 
-document.getElementById('paste-image').addEventListener('click', () => {
-    const text = 'Please allow access to the clipboard. ⬆️';
-    const permissionMessage = document.getElementById('permission-message');
-    permissionMessage.innerHtml = text;
-    clipboardUtils.readImage(postDataToExtensionHost);
-});
+    /** @param {Blob} blob */
+    async function sendImage(blob) {
+        log(`sending ${blob.type} (${blob.size} bytes)`);
+        setStatus('Saving image…');
+        vscode.postMessage({ type: 'image', data: await toDataUrl(blob) });
+    }
 
-document.getElementById('debug-btn').addEventListener('click', () => {
-    toggleDebug();
-});
+    /** @returns {Promise<Blob | null>} */
+    async function readFromClipboardApi() {
+        if (!navigator.clipboard || !navigator.clipboard.read) {
+            throw new Error('The clipboard API is not available in this WebView. Try pressing Ctrl+V instead.');
+        }
+        for (const item of await navigator.clipboard.read()) {
+            const type = item.types.find((t) => IMAGE_TYPES.includes(t));
+            if (type) {
+                return item.getType(type);
+            }
+        }
+        return null;
+    }
+
+    async function onPasteButtonClick() {
+        pasteButton.disabled = true;
+        setStatus('Reading clipboard… Allow access if VS Code asks for permission.');
+        try {
+            const blob = await readFromClipboardApi();
+            if (!blob) {
+                fail('No image found in the clipboard. Copy an image and try again.');
+                return;
+            }
+            await sendImage(blob);
+        } catch (error) {
+            fail(`Could not read the clipboard: ${error instanceof Error ? error.message : error}`);
+        }
+    }
+
+    /** @param {ClipboardEvent} event */
+    async function onPaste(event) {
+        const files = Array.from(event.clipboardData ? event.clipboardData.files : []);
+        const file = files.find((f) => IMAGE_TYPES.includes(f.type));
+        event.preventDefault();
+        if (!file) {
+            fail('No image found in the clipboard. Copy an image and try again.');
+            return;
+        }
+        pasteButton.disabled = true;
+        try {
+            await sendImage(file);
+        } catch (error) {
+            fail(error instanceof Error ? error.message : String(error));
+        }
+    }
+
+    pasteButton.addEventListener('click', onPasteButtonClick);
+    document.addEventListener('paste', onPaste);
+    log('webview opened');
+})();

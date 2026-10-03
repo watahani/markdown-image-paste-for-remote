@@ -26,7 +26,7 @@ It works by following these steps:
 - User copies an image to the clipboard
 - User run the `Insert Image` command
 - The extension creates a WebView panel and show paste button
-- User clicks the paste button to grant access to the clipboard (interactive action required by the WebView clipboard API)
+- User clicks the paste button (or presses Ctrl+V / ⌘V) to grant access to the clipboard (interactive action required by the WebView clipboard API)
 - WebView encodes the image content as a base64 string and sends it to the extension
 - The extension decodes the base64 string and saves the image to remote host
 - The extension generates the appropriate Markdown syntax for the copied image and inserts it into the Markdown file
@@ -43,6 +43,7 @@ It works by following these steps:
     ${currentFileName}: the current file name with ext.
     ${currentFileNameWithoutExt}: the current file name without ext.
 
+    Relative paths are resolved from the directory of the current Markdown file.
     Default value is ${currentFileDir}${currentFileNameWithoutExt}.
 
 ## Contribution

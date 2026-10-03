@@ -1,223 +1,65 @@
-// The module 'vscode' contains the VS Code extensibility API
-// Import the module and reference it with the alias vscode in your code below
-import path = require('path');
+import * as path from 'path';
 import * as vscode from 'vscode';
-import * as crypto from 'crypto';
-import { StringDecoder } from 'string_decoder';
+import { parseImageDataUrl, resolveImageDir, toMarkdownImage } from './image';
+import { EXTENSION_NAME, log, logError } from './logger';
+import { readClipboardImage } from './pastePanel';
+import { promptImageInfo } from './prompts';
 
-const EXTENSION_NAME = 'markdown-paste-image-for-remote';
+export function activate(context: vscode.ExtensionContext) {
+	log('activated');
+	context.subscriptions.push(
+		vscode.commands.registerCommand(`${EXTENSION_NAME}.paste-image`, () =>
+			pasteImage(context.extensionUri).catch((error: unknown) => {
+				const message = error instanceof Error ? error.message : String(error);
+				logError(message);
+				vscode.window.showErrorMessage(`Paste Image failed: ${message}`);
+			}),
+		),
+	);
+}
 
-// This method is called when your extension is activated
-// Your extension is activated the very first time the command is executed
-export async function activate(context: vscode.ExtensionContext) {
+export function deactivate() { }
+
+async function pasteImage(extensionUri: vscode.Uri): Promise<void> {
 	if (vscode.env.remoteName === undefined) {
-		log("this extension only works in remote environment");
+		vscode.window.showWarningMessage('Paste Image for Remote only works in a remote environment.');
 		return;
 	}
-	// Use the console to output diagnostic information (log) and errors (console.error)
-	// This line of code will only be executed once when your extension is activated
-	log(`"${EXTENSION_NAME}" is now active!`);
+	const editor = vscode.window.activeTextEditor;
+	if (!editor) {
+		vscode.window.showInformationMessage('No editor is active.');
+		return;
+	}
+	const document = editor.document;
 
-	const staticPath = vscode.Uri.file(path.join(context.extensionPath, 'static'));
-	const htmlPath = vscode.Uri.joinPath(staticPath, 'webview.html');
-	const decoder = new StringDecoder('utf-8');
-	const unit8content = await vscode.workspace.fs.readFile(htmlPath);
-	const htmlTemplate = decoder.write(Buffer.from(unit8content));
+	const info = await promptImageInfo(document.getText(editor.selection));
+	if (!info) {
+		return;
+	}
 
-	context.subscriptions.push(
-		vscode.commands.registerCommand(`${EXTENSION_NAME}.paste-image`, async () => {
-			//get file which is active
-			const editor = vscode.window.activeTextEditor;
-			if (!editor) {
-				vscode.window.showInformationMessage('No editor is active');
-				return;
-			}
-			pasteImage(context, staticPath, htmlTemplate);
+	const dataUrl = await readClipboardImage(extensionUri);
+	if (dataUrl === undefined) {
+		return;
+	}
+	const image = parseImageDataUrl(dataUrl);
+	if (!image) {
+		vscode.window.showErrorMessage('The clipboard does not contain an image.');
+		return;
+	}
 
-		})
+	const markdownFile = document.uri.fsPath;
+	const workspaceFolder = vscode.workspace.getWorkspaceFolder(document.uri) ?? vscode.workspace.workspaceFolders?.[0];
+	const imageDir = resolveImageDir(
+		vscode.workspace.getConfiguration('markdownImagePasteForRemote').get<string>('imagePath'),
+		{ markdownFile, projectRoot: workspaceFolder?.uri.fsPath ?? path.dirname(markdownFile) },
 	);
-}
+	const imageFile = path.join(imageDir, `${info.fileName}.${image.extension}`);
 
-function log(message: string) {
-	//utc timestapmp
-	const timestamp = new Date().toISOString();
-	console.log(`${timestamp} - [${EXTENSION_NAME}]${message}`);
-}
+	await vscode.workspace.fs.createDirectory(vscode.Uri.file(imageDir));
+	await vscode.workspace.fs.writeFile(vscode.Uri.file(imageFile), image.buffer);
+	log(`saved ${imageFile}`);
 
-function err(message: string) {
-	const timestamp = new Date().toISOString();
-	console.error(`${timestamp} - [${EXTENSION_NAME}]${message}`);
-}
-
-async function pasteImage(context: vscode.ExtensionContext, staticPath: vscode.Uri, htmlTemplate: string) {
-
-	try {
-		const editor = vscode.window.activeTextEditor;
-		if (!editor) {
-			vscode.window.showErrorMessage('No active editor found');
-			return;
-		}
-		//selected text
-		const selectedText = editor.document.getText(editor.selection);
-		const fileNameAndAlt = await askFileName(selectedText);
-		if (fileNameAndAlt === null) { return; }
-		//get relative path
-		const mdPath = editor.document.uri.fsPath;	
-
-		const panel = await createImagePastePanel(staticPath, htmlTemplate);
-		await panel.webview.onDidReceiveMessage(
-			async (message) => {
-				if (message.type === 'image') {
-					if (checkMessageIsImage(message.data) === false) {
-						vscode.window.showErrorMessage('Not an image in clipboard');
-						panel.dispose();
-					}
-					const base64data = message.data.replace(/^data:image\/\w+;base64,/, '');
-					const fileExtension = message.data.substring(message.data.indexOf('/') + 1, message.data.indexOf(';'));
-
-					const mdName = mdPath.substring(mdPath.lastIndexOf('/') + 1, mdPath.length);
-					const currentFileDir = path.dirname(mdPath) + '/';
-					const mdNameWithoutExtension = mdName.substring(0, mdName.lastIndexOf('.'));
-					const projectRoot = vscode.workspace.workspaceFolders![0].uri.fsPath + '/';
-
-					let pathConfig = vscode.workspace.getConfiguration('markdownImagePasteForRemote')['imagePath'];
-					if (!pathConfig) {
-						pathConfig = "${currentFileDir}${currentFileNameWithoutExt}";
-					}
-					pathConfig = pathConfig.replace(/\${currentFileDir}/g, currentFileDir);
-					pathConfig = pathConfig.replace(/\${currentFileName}/g, mdName);
-					pathConfig = pathConfig.replace(/\${currentFileNameWithoutExt}/g, mdNameWithoutExtension);
-					pathConfig = pathConfig.replace(/\${projectRoot}/g, projectRoot);
-			
-					const outpath = pathConfig;
-
-					await saveImageToFolder(base64data, outpath, fileNameAndAlt.filename + '.' + fileExtension);
-					const relativePath = path.relative(currentFileDir, outpath + '/' + fileNameAndAlt.filename + '.' + fileExtension);
-					panel.dispose(); // Close the webview panel
-					await insertImageToMarkdown(editor, relativePath, fileNameAndAlt.altText);
-
-				} else if (message.type === 'debug') {
-					log(`[webview] ${message.data}`);
-				} else if (message.type === 'error') {
-					err(`[webview] ${message.data}`);
-					vscode.window.showErrorMessage(message.data);
-					panel.dispose();
-				}
-			},
-			undefined,
-			context.subscriptions
-		);
-	} catch (error: any) {
-		err(error.message);
-		vscode.window.showErrorMessage(`Error: ${error.message}`);
-	}
-}
-
-function checkMessageIsImage(message: string) {
-	const regex = /^data:image\/\w+;base64,/;
-	return regex.test(message);
-}
-
-async function saveImageToFolder(base64data: string, folderPath: string, imageName: string) {
-	//if folder not exist create it
-	try {
-		await vscode.workspace.fs.stat(vscode.Uri.file(folderPath));
-	} catch (error) {
-		//create 
-		log(`Creating folder ${folderPath}`);
-		await vscode.workspace.fs.createDirectory(vscode.Uri.file(folderPath));
-	}
-	const imagePath = path.join(folderPath, imageName);
-
-	const buffer = Buffer.from(base64data, 'base64');
-	await vscode.workspace.fs.writeFile(vscode.Uri.file(imagePath), buffer);
-
-	return;
-}
-
-async function insertImageToMarkdown(editor: vscode.TextEditor, imagePath: string, altText: string) {
-	if (editor) {
-		const imageMarkdown = `![${altText}](${imagePath})`;
-		// Refocuse the editor
-		const focusedEditor = await vscode.window.showTextDocument(editor.document, { preview: false, viewColumn: editor.viewColumn });
-		//if selection
-		if (focusedEditor.selection.isEmpty) {
-			focusedEditor.edit((editBuilder) => {
-				editBuilder.insert(focusedEditor.selection.active, imageMarkdown);
-			});
-		} else {
-			focusedEditor.edit((editBuilder) => {
-				editBuilder.replace(focusedEditor.selection, imageMarkdown);
-			});
-		}
-	} else {
-		vscode.window.showErrorMessage('No active editor found');
-	}
-}
-
-async function createImagePastePanel(staticPath: vscode.Uri, htmlTemplate: string) {
-	const panel = vscode.window.createWebviewPanel(
-		'imagePaste',
-		'Paste Image',
-		vscode.ViewColumn.One,
-		{
-			enableScripts: true,
-			localResourceRoots: [staticPath]
-		}
-	);
-
-	const cssPath = vscode.Uri.joinPath(staticPath, 'styles.css');
-	const scriptPath = vscode.Uri.joinPath(staticPath, 'webview.js');
-	const nonce = getBase64Nonce();
-
-	panel.webview.html = htmlTemplate.replace('%%STYLE_SOURCE%%', panel.webview.asWebviewUri(cssPath).toString())
-		.replace('%%SCRIPT_SOURCE%%', panel.webview.asWebviewUri(scriptPath).toString())
-		.replace(/%%CSP_SOURCE%%/g, panel.webview.cspSource)
-		.replace(/%%NONCE%%/g, nonce);
-	return panel;
-}
-
-function getBase64Nonce() {
-	const nonce = new Uint8Array(32);
-	crypto.randomFillSync(nonce);
-	return Buffer.from(nonce).toString('base64');
-}
-
-async function askFileName(selectedString?: string): Promise<{ filename: string, altText: string } | null> {
-	let value = "";
-	if (selectedString) {
-		//split by line break
-		const lines = selectedString.split(/\r?\n/);
-		if (lines.length >= 1) {
-			//first line is filename
-			value = lines[0];
-		}
-	};
-	const inputFileName = await vscode.window.showInputBox({
-		prompt: 'enter file name',
-		placeHolder: 'image',
-		value: selectedString,
-		validateInput: (input: string) => {
-            const forbiddenCharacters = /[/\\:*?"<>|]/g;
-            return forbiddenCharacters.test(input)
-                ? 'File names cannot contain /, \\, :, *, ?, ", <, >, |.'
-                : null;
-        },
-	});
-
-	if (null === inputFileName || undefined === inputFileName) {
-		return null;
-	}
-
-	let inputAltText = await vscode.window.showInputBox({
-		prompt: 'enter alt text'
-	});
-
-	if (null === inputAltText || undefined === inputAltText) {
-		return null;
-	}
-
-	const filename = inputFileName !== '' ? inputFileName : 'image';
-
-	return { filename: filename, altText: inputAltText };
+	const target = await vscode.window.showTextDocument(document, { preview: false, viewColumn: editor.viewColumn });
+	const markdown = toMarkdownImage(markdownFile, imageFile, info.altText);
+	await target.edit((builder) => builder.replace(target.selection, markdown));
 }

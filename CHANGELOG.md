@@ -6,6 +6,20 @@ Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how 
 
 ## [Unreleased]
 
+### Changed
+
+- Redesigned the paste panel to follow the VS Code color theme, with inline status and error messages and a collapsible debug log.
+- The paste panel now opens beside the editor and stays open on errors so you can retry.
+- Images can also be pasted with Ctrl+V / ⌘V in the paste panel.
+- Relative `imagePath` values are resolved from the directory of the current Markdown file.
+- Refactored the extension into smaller modules and added unit tests.
+
+### Fixed
+
+- The first line of the selected text is now used as the default file name (and alt text).
+- Image links containing spaces are wrapped in `<>` so they render correctly.
+- Running the command outside a remote environment shows a message instead of "command not found".
+
 ## [0.1.0] - 2023-05-08
 
 ### Added

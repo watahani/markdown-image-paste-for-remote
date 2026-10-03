@@ -34,7 +34,7 @@
           "markdownImagePasteForRemote.imagePath": {
             "type": "string",
             "default": "${currentFileDir}${currentFileNameWithoutExt}",
-            "description": "The destination to save image file.You can use variable ${currentFileDir}, ${fileNameWithoutExt} and ${projectRoot}. ${currentFileDir} will be replace by the path of directory that contain current editing file. ${projectRoot} will be replace by path of the project opened in vscode. ${currentFileNameWithoutExt} will be replace by the name of current editing file without extension."   
+            "markdownDescription": "Directory to save pasted images to. Relative paths are resolved from the directory of the current Markdown file.\n\nAvailable variables:\n- `${currentFileDir}`: directory of the current file (with trailing separator)\n- `${currentFileName}`: current file name with extension\n- `${currentFileNameWithoutExt}`: current file name without extension\n- `${projectRoot}`: workspace folder that contains the current file (with trailing separator)"
           }
         }
       }
