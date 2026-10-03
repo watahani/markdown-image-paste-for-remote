@@ -6,6 +6,9 @@ on:
     tags:
       - "v*"
 
+permissions:
+  contents: read
+
 jobs:
   build:
     strategy:
@@ -49,18 +52,22 @@ jobs:
             npm_config_arch: arm64
     runs-on: ${{ matrix.os }}
     steps:
-      - uses: actions/checkout@v3
-      - uses: actions/setup-node@v3
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          node-version: 14.x
-      - run: npm install
+          persist-credentials: false
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 22.x
+          package-manager-cache: false
+      # .npmrc sets ignore-scripts=true, so dependency install scripts never run.
+      - run: npm ci
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           npm_config_arch: ${{ matrix.npm_config_arch }}
+      - run: npm audit signatures
       - shell: pwsh
         run: echo "target=${{ matrix.platform }}-${{ matrix.arch }}" >> $env:GITHUB_ENV
-      - run: npx vsce package --target ${{ env.target }}
-      - uses: actions/upload-artifact@v3
+      - run: npx --no-install vsce package --target ${{ env.target }}
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: ${{ env.target }}
           path: "*.vsix"
@@ -70,7 +77,17 @@ jobs:
     needs: build
     if: success() && startsWith( github.ref, 'refs/tags/')
     steps:
-      - uses: actions/download-artifact@v3
-      - run: npx vsce publish --packagePath $(find . -iname *.vsix)
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 22.x
+          package-manager-cache: false
+      - run: npm ci
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          path: vsix
+      - run: npx --no-install vsce publish --packagePath $(find vsix -iname '*.vsix')
         env:
           VSCE_PAT: ${{ secrets.VSCE_PAT }}
