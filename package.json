@@ -9,12 +9,14 @@
   "publisher": "watahani",
   "version": "0.3.0",
   "engines": {
-    "vscode": "^1.77.0"
+    "vscode": "^1.97.0"
   },
   "categories": [
     "Other"
   ],
-  "activationEvents": [],
+  "activationEvents": [
+    "onLanguage:markdown"
+  ],
   "main": "./out/extension.js",
   "contributes": {
     "commands": [
@@ -31,6 +33,11 @@
         "type": "object",
         "title": "Markdown Image Paste for Remote",
         "properties": {
+          "markdownImagePasteForRemote.editorPaste.enabled": {
+            "type": "boolean",
+            "default": true,
+            "markdownDescription": "Save images pasted into a Markdown editor (Ctrl+V / ⌘V) to `#markdownImagePasteForRemote.imagePath#` and insert a link to them. Works in GitHub Codespaces and remote hosts. If VS Code's built-in Markdown image paste is used instead, add `markdown.link.image.remote` to `#editor.pasteAs.preferences#`."
+          },
           "markdownImagePasteForRemote.imagePath": {
             "type": "string",
             "default": "${currentFileDir}${currentFileNameWithoutExt}",
@@ -55,7 +62,7 @@
     "@types/glob": "^8.1.0",
     "@types/mocha": "^10.0.1",
     "@types/node": "16.x",
-    "@types/vscode": "^1.77.0",
+    "@types/vscode": "1.97.0",
     "@typescript-eslint/eslint-plugin": "^5.59.1",
     "@typescript-eslint/parser": "^5.59.1",
     "@vscode/test-electron": "^2.3.0",

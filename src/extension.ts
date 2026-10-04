@@ -1,13 +1,15 @@
-import * as path from 'path';
 import * as vscode from 'vscode';
-import { parseImageDataUrl, resolveImageDir, toMarkdownImage } from './image';
+import { parseImageDataUrl, toMarkdownImage } from './image';
 import { EXTENSION_NAME, log, logError } from './logger';
 import { readClipboardImage } from './pastePanel';
+import { ImagePasteProvider } from './pasteProvider';
 import { promptImageInfo } from './prompts';
+import { findAvailableFile, getImageDir } from './settings';
 
 export function activate(context: vscode.ExtensionContext) {
 	log('activated');
 	context.subscriptions.push(
+		ImagePasteProvider.register(),
 		vscode.commands.registerCommand(`${EXTENSION_NAME}.paste-image`, () =>
 			pasteImage(context.extensionUri).catch((error: unknown) => {
 				const message = error instanceof Error ? error.message : String(error);
@@ -47,19 +49,14 @@ async function pasteImage(extensionUri: vscode.Uri): Promise<void> {
 		return;
 	}
 
-	const markdownFile = document.uri.fsPath;
-	const workspaceFolder = vscode.workspace.getWorkspaceFolder(document.uri) ?? vscode.workspace.workspaceFolders?.[0];
-	const imageDir = resolveImageDir(
-		vscode.workspace.getConfiguration('markdownImagePasteForRemote').get<string>('imagePath'),
-		{ markdownFile, projectRoot: workspaceFolder?.uri.fsPath ?? path.dirname(markdownFile) },
-	);
-	const imageFile = path.join(imageDir, `${info.fileName}.${image.extension}`);
+	const imageDir = getImageDir(document);
+	const imageFile = await findAvailableFile(imageDir, info.fileName, image.extension);
 
 	await vscode.workspace.fs.createDirectory(vscode.Uri.file(imageDir));
 	await vscode.workspace.fs.writeFile(vscode.Uri.file(imageFile), image.buffer);
 	log(`saved ${imageFile}`);
 
 	const target = await vscode.window.showTextDocument(document, { preview: false, viewColumn: editor.viewColumn });
-	const markdown = toMarkdownImage(markdownFile, imageFile, info.altText);
+	const markdown = toMarkdownImage(document.uri.fsPath, imageFile, info.altText);
 	await target.edit((builder) => builder.replace(target.selection, markdown));
 }

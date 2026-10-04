@@ -1,6 +1,6 @@
 import * as assert from 'assert';
 import * as path from 'path';
-import { parseImageDataUrl, resolveImageDir, toMarkdownImage, validateFileName } from '../../image';
+import { extensionForMime, fileNameFromSelection, parseImageDataUrl, resolveImageDir, toMarkdownImage, validateFileName } from '../../image';
 
 suite('image helpers', () => {
 	const root = path.resolve('/workspace/project');
@@ -32,5 +32,17 @@ suite('image helpers', () => {
 	test('validateFileName', () => {
 		assert.strictEqual(validateFileName('screenshot-1'), undefined);
 		assert.ok(validateFileName('a/b'));
+	});
+
+	test('extensionForMime', () => {
+		assert.strictEqual(extensionForMime('image/png'), 'png');
+		assert.strictEqual(extensionForMime('image/jpeg'), 'jpg');
+		assert.strictEqual(extensionForMime('image/svg+xml'), 'svg');
+	});
+
+	test('fileNameFromSelection', () => {
+		assert.strictEqual(fileNameFromSelection(''), 'image');
+		assert.strictEqual(fileNameFromSelection('  diagram  \nsecond line'), 'diagram');
+		assert.strictEqual(fileNameFromSelection('a/b: c'), 'a-b- c');
 	});
 });

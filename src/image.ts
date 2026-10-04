@@ -19,9 +19,22 @@ export function parseImageDataUrl(dataUrl: string): ImageData | null {
 	if (!match) {
 		return null;
 	}
-	const subtype = match[1].toLowerCase();
-	const extension = subtype === 'jpeg' ? 'jpg' : subtype.replace(/\+.*$/, '');
-	return { extension, buffer: Buffer.from(match[2], 'base64') };
+	return { extension: extensionForMime(`image/${match[1]}`), buffer: Buffer.from(match[2], 'base64') };
+}
+
+/** Returns the file extension for an image MIME type, e.g. `image/svg+xml` -> `svg`. */
+export function extensionForMime(mime: string): string {
+	const subtype = mime.toLowerCase().replace(/^image\//, '').replace(/[+;].*$/, '');
+	return subtype === 'jpeg' ? 'jpg' : subtype;
+}
+
+/**
+ * Derives an image file name (without extension) from the selected text:
+ * the first line, with characters that are not allowed in file names replaced.
+ */
+export function fileNameFromSelection(selectedText: string): string {
+	const name = selectedText.split(/\r?\n/)[0].trim().replace(/[/\\:*?"<>|]+/g, '-');
+	return name || 'image';
 }
 
 export interface PathVariables {
@@ -55,11 +68,16 @@ export function resolveImageDir(template: string | undefined, vars: PathVariable
 
 /** Builds the Markdown image syntax for an image relative to the Markdown file. */
 export function toMarkdownImage(markdownFile: string, imageFile: string, altText: string): string {
+	return `![${altText}](${toMarkdownLink(markdownFile, imageFile)})`;
+}
+
+/** Builds the link target of an image relative to the Markdown file. */
+export function toMarkdownLink(markdownFile: string, imageFile: string): string {
 	let link = path.relative(path.dirname(markdownFile), imageFile).split(path.sep).join('/');
 	if (/[\s()<>]/.test(link)) {
 		link = `<${link}>`;
 	}
-	return `![${altText}](${link})`;
+	return link;
 }
 
 const FORBIDDEN_FILENAME_CHARS = /[/\\:*?"<>|]/;

@@ -8,7 +8,14 @@ Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how 
 
 ## [0.3.0] - 2026-10-03
 
+### Added
+
+- Paste images into a Markdown editor with Ctrl+V / ⌘V, in GitHub Codespaces and on remote hosts. This uses VS Code's paste API, so no WebView is needed. Turn it off with `markdownImagePasteForRemote.editorPaste.enabled`.
+
 ### Changed
+
+- Requires VS Code 1.97 or later.
+- An existing image is no longer overwritten. `-1`, `-2`, ... is added to the file name instead.
 
 - Redesigned the paste panel to follow the VS Code color theme, with inline status and error messages and a collapsible debug log.
 - The paste panel now opens beside the editor and stays open on errors so you can retry.
