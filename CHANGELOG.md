@@ -6,6 +6,12 @@ Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how 
 
 ## [Unreleased]
 
+## [0.2.1] - 2026-10-07
+
+### Deprecated
+
+- This extension is no longer maintained. Use VS Code's built-in Markdown image paste instead. See the README for how to migrate.
+
 ## [0.1.0] - 2023-05-08
 
 ### Added

@@ -1,6 +1,37 @@
 # Markdown Image Paste for Remote
 [![CI](https://badgen.net/vs-marketplace/v/watahani.markdown-image-paste-for-remote)](https://marketplace.visualstudio.com/items?itemName=watahani.markdown-image-paste-for-remote)
 
+> [!IMPORTANT]
+> **This extension is no longer maintained, and the repository is archived.**
+> VS Code now has this feature built in. Paste an image into a Markdown editor with Ctrl+V / ⌘V, and VS Code saves it to the workspace and inserts a link.
+> This works in GitHub Codespaces, Dev Containers and Remote-SSH, because VS Code sends the clipboard image to the remote host.
+
+## Migrating to the built-in feature
+
+1. Uninstall this extension.
+2. To keep the folder layout this extension uses by default (`<file name>/<image>`), add this to your settings:
+
+   ```json
+   "markdown.copyFiles.destination": {
+     "**/*.md": "${documentBaseName}/"
+   }
+   ```
+
+   A relative path is resolved from the folder of the Markdown file.
+   Variables you can use include `${documentDirName}`, `${documentBaseName}`, `${documentWorkspaceFolder}`, `${fileName}` and `${fileExtName}`.
+
+3. Related settings:
+
+   | Setting | What it does |
+   |---|---|
+   | `markdown.editor.filePaste.enabled` | Turns pasting files as links on or off |
+   | `markdown.copyFiles.overwriteBehavior` | Default `nameIncrementally`: adds a number to the name instead of overwriting an existing file |
+   | `editor.pasteAs.enabled` | Turns the paste options on or off (on by default) |
+
+If you select text before pasting, the selected text becomes the alt text.
+
+---
+
 ![screen shot](images/screenshot.gif)
 
 Markdown Image Paste for Remote is a Visual Studio Code extension designed to simplify the process of inserting images into Markdown files while working in a remote development environment, such as GitHub Codespaces or a DevContainer. It uses the WebView clipboard API to provide an easy and convenient way to copy images from your clipboard to your remote host and automatically generate the appropriate Markdown syntax for the copied image.
